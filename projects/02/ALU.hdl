@@ -42,5 +42,45 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+	// zero x
+	Not(in=zx, out=zeroX);
+	// there must be a better way of doing this
+	And16(a=x, b[0]=zeroX, b[1]=zeroX, b[2]=zeroX, b[3]=zeroX, b[4]=zeroX, b[5]=zeroX, b[6]=zeroX, b[7]=zeroX, b[8]=zeroX, b[9]=zeroX, b[10]=zeroX, b[11]=zeroX, b[12]=zeroX, b[13]=zeroX, b[14]=zeroX, b[15]=zeroX, out=x1);
+
+	// negate x
+	Not16(in=x1, out=negatedX);
+	Mux16(a=x1, b=negatedX, sel=nx, out=x2);
+
+	// zero y
+	Not(in=zy, out=zeroY);
+	And16(a=y, b[0]=zeroY, b[1]=zeroY, b[2]=zeroY, b[3]=zeroY, b[4]=zeroY, b[5]=zeroY, b[6]=zeroY, b[7]=zeroY, b[8]=zeroY, b[9]=zeroY, b[10]=zeroY, b[11]=zeroY, b[12]=zeroY, b[13]=zeroY, b[14]=zeroY, b[15]=zeroY, out=y1);
+
+	// negate y
+	Not16(in=y1, out=negatedY);
+	Mux16(a=y1, b=negatedY, sel=ny, out=y2);
+
+	// adding and anding
+	Add16(a=x2, b=y2, out=addAB);
+	And16(a=x2, b=y2, out=andAB);
+
+	// choosing added or anded
+	Mux16(a=andAB, b=addAB, sel=f, out=outNormal);
+
+	// negating the output
+	Not16(in=outNormal, out=outNegated);
+	// i need to do this weird indexing so that i can OR them to check if 0
+	Mux16(a=outNormal, b=outNegated, sel=no, out[15]=outOne);
+	Mux16(a=outNormal, b=outNegated, sel=no, out[0..7]=out1);
+	Mux16(a=outNormal, b=outNegated, sel=no, out[8..15]=out2);
+	Mux16(a=outNormal, b=outNegated, sel=no, out=out);
+
+	// checking if out is zero
+	Or8Way(in=out1, out=outOr1);
+	Or8Way(in=out2, out=outOr2);
+	Or(a=outOr1, b=outOr2, out=zrTemp);
+	Not(in=zrTemp, out=zr, out=zrNot);
+
+	// checking if negative
+	And(a=outOne, b=true, out=ng1);
+	And(a=zrTemp, b=ng1, out=ng);
 }
